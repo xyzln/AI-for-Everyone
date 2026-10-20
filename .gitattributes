@@ -1,0 +1,6 @@
+# Git 属性规则
+#
+# Windows 批处理必须是 CRLF 行尾：cmd.exe 对 LF-only 的 .bat 解析不稳定
+# （断行、rem/label 失效）。eol=crlf 保证任何平台/任何 autocrlf 设置下
+# checkout 出来的 .bat 都是 CRLF（仓库内仍存规范化 LF）。
+*.bat text eol=crlf

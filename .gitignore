@@ -1,0 +1,15 @@
+# AIE ignore rules
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.egg-info/
+.pytest_cache/
+dist/
+build/
+runs/
+logs/
+.aife/
+*.log
+.DS_Store
+web/mock/

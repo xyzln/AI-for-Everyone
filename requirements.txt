@@ -1,0 +1,10 @@
+# AIE (AI For Everyone) core Python dependencies — kept to <=6 per design (D2/D16, 02-architecture §3.1).
+# All are runtime deps; torch is NOT a dependency (hardware probing lazy-imports it, 03-ollama-accel §2/ADR-007).
+fastapi>=0.110
+uvicorn>=0.27
+httpx>=0.27
+pydantic>=2.6
+PyYAML>=6.0
+websockets>=12.0
+# Dev / test only (not required for aife to run):
+pytest>=8.0

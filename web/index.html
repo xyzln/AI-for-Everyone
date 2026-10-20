@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AI For Everyone</title>
+  <link rel="icon" type="image/svg+xml" href="./assets/favicon.svg" />
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <div id="splash" class="splash" role="status" aria-live="polite">
+    <img class="splash-logo" src="./assets/logo.svg" alt="" />
+    <div class="splash-title">AI For Everyone</div>
+    <div class="splash-sub">正在连接本地服务…</div>
+    <div class="splash-spinner" aria-hidden="true"></div>
+  </div>
+  <header class="topbar">
+    <div class="brand"><img class="brand-logo" src="./assets/logo.svg" alt="" /><span>AI For Everyone</span></div>
+    <nav class="tabs" role="tablist" aria-label="主导航">
+      <button class="tab" role="tab" id="tab-wizard" aria-controls="view-wizard" aria-selected="false">部署向导</button>
+      <button class="tab" role="tab" id="tab-chat" aria-controls="view-chat" aria-selected="false">聊天</button>
+      <button class="tab" role="tab" id="tab-models" aria-controls="view-models" aria-selected="false">模型</button>
+      <button class="tab" role="tab" id="tab-status" aria-controls="view-status" aria-selected="false">状态</button>
+    </nav>
+    <div class="status-area">
+      <span id="ws-led" class="led" title="WebSocket 连接状态">●</span>
+      <span id="health-badge" class="badge">—</span>
+      <span id="version-label" class="version">v?</span>
+    </div>
+  </header>
+
+  <div id="ready-banner" class="ready-banner" hidden role="status">
+    <span class="rb-icon" aria-hidden="true">⚠</span>
+    <span class="rb-text" id="ready-banner-text">服务尚未就绪</span>
+    <button class="btn primary sm" id="ready-banner-action" type="button">去一键部署</button>
+  </div>
+
+  <main>
+    <section id="view-wizard" class="view" role="tabpanel" aria-labelledby="tab-wizard" hidden></section>
+    <section id="view-chat" class="view" role="tabpanel" aria-labelledby="tab-chat" hidden></section>
+    <section id="view-models" class="view" role="tabpanel" aria-labelledby="tab-models" hidden></section>
+    <section id="view-status" class="view" role="tabpanel" aria-labelledby="tab-status" hidden></section>
+  </main>
+
+  <div id="toast-root" class="toast-root" aria-live="polite"></div>
+  <div id="modal-root" class="modal-root"></div>
+
+  <script type="module" src="./app.js"></script>
+</body>
+</html>

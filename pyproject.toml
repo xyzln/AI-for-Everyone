@@ -1,0 +1,44 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "aife"
+version = "0.1.0"
+description = "AI For Everyone - one-command local LLM deployment tool (Ollama managed subprocess)"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "AIE Team" }]
+dependencies = [
+    "fastapi>=0.110",
+    "uvicorn>=0.27",
+    "httpx>=0.27",
+    "pydantic>=2.6",
+    "PyYAML>=6.0",
+    "websockets>=12.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+# 原生桌面窗口（aife desktop）：pywebview 走系统 WebView2，无需另装浏览器。
+# 可选依赖——缺失时 aife desktop 自动回退浏览器打开（webview 惰性 import）。
+# pystray 提供系统托盘/最小化到托盘；缺失时窗口行为不变（托盘惰性 import）。
+desktop = ["pywebview>=5.0", "pystray>=0.19"]
+
+[project.scripts]
+aife = "aife.cli:main"
+
+[tool.setuptools]
+packages = [
+    "aife",
+    "aife.utils",
+    "aife.backends",
+    "aife.ollama",
+    "aife.models",
+    "aife.server",
+    "aife.server.routes",
+]
+
+[tool.setuptools.package-data]
+aife = ["py.typed"]

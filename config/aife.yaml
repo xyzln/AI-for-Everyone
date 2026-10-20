@@ -1,0 +1,134 @@
+# =============================================================================
+# AIE（AI For Everyone）配置文件 —— 唯一配置真相源
+# 位置：~/.aife/config.yaml（D13 用户级）；本文件为仓库模板，setup/serve 首次运行复制
+# 规则：
+#   1. 密钥只写 ${VAR} 引用（如 ${AIE_OPENAI_API_KEY:-}），禁止明文；
+#   2. 路径支持 ~ 与 ${VAR} 展开；不写绝对路径，保证 ~/.aife 整目录可迁移；
+#   3. config_version 为 schema 版本号，演进规则见 docs/design/04-data-model.md §4；
+#   4. 所有字段均可缺省，缺省值即本文件所示默认值。
+# =============================================================================
+config_version: 1
+
+# ---- 硬件剖面（hardware.py 消费） --------------------------------------------
+hardware:
+  device: auto              # auto 按 CUDA>ROCM>XPU>MPS>Vulkan>NPU>CPU 求解（ADR-002）
+  vram_gb: null             # 只读展示位：探测回填；PATCH /api/config 拒绝写入
+
+# ---- Ollama 进程（ollama/manager.py 消费） -----------------------------------
+ollama:
+  host: 127.0.0.1           # 注入 OLLAMA_HOST；修改后需重启 Ollama 子进程
+  port: 11434               # 1-65535；不可与 server.port 相同
+  autostart: true           # aife serve/setup 时自动拉起 Ollama
+  keep_alive: 5m            # 模型驻留时长；格式 ^[0-9]+(s|m|h|d)$
+  num_gpu: -1               # -1=自动分层卸载；0=纯 CPU；>0=层数（请求级 option，非 env）
+  max_loaded_models: 1      # 1-8，按内存约束
+  executable: ollama        # 可执行文件名或路径；便携/绿色安装场景使用
+  models_dir: null          # 注入 OLLAMA_MODELS；null=Ollama 默认（~/.ollama/models）
+  min_version: 0.5.0        # D11 版本矩阵下限；doctor 对低于此版本报不支持
+  shutdown_on_exit: true    # aife 退出时是否停止由本进程拉起的 managed Ollama（adopted 永不杀）
+  install:                  # D9 安装方式优先级
+    method: auto            # auto|winget|brew|apt|script|manual
+    confirm: true           # 下载/安装前询问（--yes 可绕过）
+
+# ---- 模型（models/catalog.py、models/manager.py 消费） -----------------------
+models:
+  default: null             # null=按剖面推荐（D8 分档表）；非 null=显式模型名
+  tier: auto                # auto|1.5b|3b|7b|14b；锁定推荐档位
+  # D8 分档表（catalog 内置，仅文档说明，不在 YAML 维护）：
+  #   RAM<8GB → qwen2.5:1.5b｜8-16GB → qwen2.5:3b｜16-32GB → qwen2.5:7b
+  #   GPU VRAM 8-12GB → qwen2.5:7b｜≥12GB → qwen2.5:14b｜Apple 统一内存按总 RAM
+  max_concurrent_pull: 1    # 1-4；全局单任务
+
+# ---- 推理后端（backends/registry 消费） --------------------------------------
+backends:
+  active: ollama            # ollama|openai_compat|llamacpp|vllm；热切换不重启服务
+  fallback: [ollama]        # 非空；元素 ∈ [ollama, openai_compat, llamacpp, vllm]
+
+# ---- 外部 OpenAI 兼容后端（US5.4 Should；本地故障时回退） ---------------------
+openai_compat:
+  enabled: false
+  base_url: ${AIE_OPENAI_BASE_URL:-https://api.openai.com/v1}
+  api_key: ${AIE_OPENAI_API_KEY:-}        # 敏感：只允许 ${VAR} 形式；GET /api/config 打码
+  model: gpt-4o-mini
+  timeout_s: 120
+  max_retries: 2
+
+# ---- llama.cpp（llama-server；backends/llamacpp.py 消费） ---------------------
+# 两种模式：
+#   managed —— binary 指向 llama-server，AIE 负责拉起/健康轮询/退出时终止；
+#   adopted —— base_url 指向已在跑的 llama-server 且 binary 留空，AIE 只连接，
+#              永不拉起也永不杀死（与 Ollama adopted 策略一致）。
+# GPU 卸载取决于 llama-server 的构建（CUDA/Vulkan/Metal/CPU）：层数、上下文等
+# 一律经 extra_args 透传（如 -ngl/--n-gpu-layers 99、-c 8192）。
+#llamacpp:
+#  enabled: false
+#  binary: llama-server      # 可执行文件名或路径；adopted 模式留空
+#  host: 127.0.0.1
+#  port: 8081                # 不可与 ollama.port / server.port / vllm.port 相同
+#  model: ""                 # GGUF 模型文件路径（-m）
+#  base_url: ""              # adopted：http://127.0.0.1:8081
+#  autostart: true           # managed 模式下由 AIE 拉起
+#  startup_timeout_s: 120    # /health 就绪轮询上限
+#  extra_args: []            # 如 ["-ngl", "99", "-c", "8192"]
+
+# ---- vLLM（backends/vllm.py 消费） -------------------------------------------
+# 两种模式同 llamacpp：
+#   managed —— binary 为 vllm 或 python 解释器路径（后者走
+#              python -m vllm.entrypoints.openai.api_server），AIE 拉起；
+#   adopted —— base_url 指向已在跑的 vLLM 服务且 binary 留空，只连接。
+# 注意：vLLM 面向 GPU（CUDA/ROCm）；CPU 仅实验性且慢，需自知地经 extra_args
+# 指定（如 --device cpu）。模型加载慢，startup_timeout_s 默认 180s。
+#vllm:
+#  enabled: false
+#  binary: vllm              # vllm / python 解释器路径；adopted 模式留空
+#  host: 127.0.0.1
+#  port: 8000                # 不可与 ollama.port / server.port / llamacpp.port 相同
+#  model: ""                 # HF 模型名或本地路径（--model）
+#  base_url: ""              # adopted：http://127.0.0.1:8000
+#  autostart: true           # managed 模式下由 AIE 拉起
+#  startup_timeout_s: 180
+#  extra_args: []            # 如 ["--dtype", "half", "--gpu-memory-utilization", "0.9"]
+
+# ---- aife-server（server/app.py 消费） ---------------------------------------
+server:
+  host: 127.0.0.1           # D10：MVP 默认仅本地；改 0.0.0.0 需自知风险（README 明示）
+  port: 8189                # D5；不可与 ollama.port 相同
+  log_level: info           # debug|info|warning|error
+  open_browser: true        # serve 后自动打开浏览器
+  cors_origins:            # 本地 CORS 兜底（静态托管是主路径）
+    - http://127.0.0.1:8189
+    - http://localhost:8189
+  ws_heartbeat_s: 30        # WS 应用层心跳间隔（测试可配 1）
+
+# ---- 对话（server/chat + backends 消费） ------------------------------------
+chat:
+  request_timeout_s: 300    # 非流式上游读超时
+  stream_timeout_s: 600     # SSE 整体超时
+  stream_idle_timeout_s: 120  # 两片 delta 间隔空闲超时
+
+# ---- 网络（D1：多镜像回退 + 显式配置点，不静默改流量走向） -------------------
+network:
+  mirror: auto              # auto=官方源优先、失败按内置镜像清单回退并告知；official=仅官方；custom=仅 mirror_urls
+  mirror_urls: []           # custom 模式的镜像/代理基址列表（http(s)://）
+  proxy: null               # http(s)://...；null=读 HTTP_PROXY/HTTPS_PROXY 环境变量
+  connect_timeout_s: 10
+  read_timeout_s: 600       # 大模型分块下载需要长读超时
+  retries: 2
+
+# ---- setup 流水线（bootstrap.py 消费） ---------------------------------------
+setup:
+  skip: []                  # 元素 ∈ [deps,ollama,model]；断点续跑（US1.2）
+
+# ---- bench --------------------------------------------------------------------
+bench:
+  duration_s: 30            # >0
+
+# ---- 日志（utils/logging.py 消费） -------------------------------------------
+logging:
+  dir: null                 # null=配置文件同级 logs/；非 null=显式目录（迁移时日志跟随配置）
+  app_file: aife.log        # 滚动应用日志：10MB×5（架构 §7）
+  rotate_max_mb: 10
+  rotate_backups: 5
+  run_log_keep: 20          # setup-*.jsonl 保留最近 N 个运行文件
+  jsonl: true               # setup 运行日志用 JSONL（US6.2/A12）
+  console_level: info
