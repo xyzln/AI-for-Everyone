@@ -1,5 +1,11 @@
 # AI For Everyone (AIE)
 
+![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
+![Python](https://img.shields.io/badge/Python-3.10%2B-blue.svg)
+![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey.svg)
+![Backends](https://img.shields.io/badge/Backends-Ollama%20%7C%20llama.cpp%20%7C%20vLLM-blueviolet.svg)
+![Desktop](https://img.shields.io/badge/Desktop-native%20window%20%2B%20tray-2b6cb0.svg)
+
 > 一条命令，把本地大模型跑起来。AIE 是基于 [Octop](https://github.com/) 参考架构重新实现的 **本地 LLM 一键部署工具**：硬件探测 → 依赖检查 → Ollama 安装与加速配置 → 模型拉取与验证 → 本地服务启动 → 浏览器即用。
 
 **核心承诺**
